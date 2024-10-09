@@ -21,7 +21,6 @@ services:
       retries: 5
   nakama:
     build: .
-    container_name: backend
     entrypoint:
       - "/bin/sh"
       - "-ecx"
@@ -34,6 +33,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./:/nakama/data
     expose:
       - "7349"
       - "7350"
@@ -45,7 +46,7 @@ services:
       - "7351:7351"
       - "9876:9876"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7350/"]
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5

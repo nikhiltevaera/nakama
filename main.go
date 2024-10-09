@@ -220,7 +220,7 @@ func main() {
 
 	apiServer := server.StartApiServer(logger, startupLogger, db, jsonpbMarshaler, jsonpbUnmarshaler, config, version, socialClient, storageIndex, leaderboardCache, leaderboardRankCache, sessionRegistry, sessionCache, statusRegistry, matchRegistry, matchmaker, tracker, router, streamManager, metrics, pipeline, runtime)
 	consoleServer := server.StartConsoleServer(logger, startupLogger, db, config, tracker, router, streamManager, metrics, sessionRegistry, sessionCache, consoleSessionCache, loginAttemptCache, statusRegistry, statusHandler, runtimeInfo, matchRegistry, configWarnings, semver, leaderboardCache, leaderboardRankCache, leaderboardScheduler, storageIndex, apiServer, runtime, cookie)
-	webrtcServer := server.StartWebRTCServer(context.Background(), logger)
+	webrtcServer := server.StartWebRTCServer(ctx, logger)
 
 	if telemetryEnabled {
 		const telemetryKey = "YU1bIKUhjQA9WC0O6ouIRIWTaPlJ5kFs"

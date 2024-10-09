@@ -26,13 +26,15 @@ services:
       - "-ecx"
       - >
           /nakama/nakama migrate up --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable &&
-          exec /nakama/nakama --config /nakama/data/config.yml --name nakama1 --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable
+          exec /nakama/nakama --config /nakama/data/config.yml --name nakama --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable
     restart: unless-stopped
     links:
       - "postgres:db"
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable
     volumes:
       - ./:/nakama/data
     expose:

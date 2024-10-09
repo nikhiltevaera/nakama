@@ -22,6 +22,7 @@ import (
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/pion/webrtc/v3"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 )
@@ -113,6 +114,9 @@ type MatchHandler struct {
 
 	// Match state.
 	state interface{}
+
+	//peer connection
+	pc *webrtc.PeerConnection
 }
 
 func NewMatchHandler(logger *zap.Logger, config Config, sessionRegistry SessionRegistry, matchRegistry MatchRegistry, router MessageRouter, core RuntimeMatchCore, id uuid.UUID, node string, stopped *atomic.Bool, params map[string]interface{}) (*MatchHandler, error) {

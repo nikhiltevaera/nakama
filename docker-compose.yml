@@ -39,11 +39,12 @@ services:
       - "7349"
       - "7350"
       - "7351"
-      - "9100"
+      - "9876"
     ports:
       - "7349:7349"
       - "7350:7350"
       - "7351:7351"
+      - "9876:9876"
     healthcheck:
       test: ["CMD", "/nakama/nakama", "healthcheck"]
       interval: 10s

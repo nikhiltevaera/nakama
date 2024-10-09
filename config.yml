@@ -1,0 +1,12 @@
+logger:
+  level: "DEBUG"
+runtime:
+  path: data/modules
+console:
+  port: 7351
+session:
+  token_expiry_sec: 3600000
+matchmaker:
+  tick_sec: 10
+match:
+  tick_sec: 10

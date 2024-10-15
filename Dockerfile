@@ -1,16 +1,18 @@
-# Stage 1: Build the Nakama server
-FROM golang:1.22 as builder
-ENV GO111MODULE on
+# Stage 1: Build the plugin
+FROM heroiclabs/nakama-pluginbuilder:3.23.0 AS builder
+ENV GO111MODULE on 
 ENV CGO_ENABLED 1
 
-WORKDIR /app
+WORKDIR /backend
 COPY . .
 
-RUN go build -o ./nakama .
+# Build the plugin
+RUN go build --trimpath --mod=vendor --buildmode=plugin -o ./backend.so
 
 # Stage 2: Create the final image
-FROM alpine:latest
+FROM heroiclabs/nakama:3.23.0
 
-COPY --from=builder /app/nakama /nakama/
-COPY --from=builder /app/config.yml /nakama/data/
+COPY --from=builder /backend/backend.so /nakama/data/modules/
+COPY --from=builder /backend/config.yml /nakama/data/
+
 

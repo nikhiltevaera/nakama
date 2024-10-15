@@ -7,11 +7,15 @@ WORKDIR /backend
 COPY . .
 
 # Build the plugin
+RUN go build -o nakama .
+
+# Build the plugin as a shared object file
 RUN go build --trimpath --mod=vendor --buildmode=plugin -o ./backend.so
 
 # Stage 2: Create the final image
 FROM heroiclabs/nakama:3.23.0
 
+COPY --from=builder /backend/nakama /nakama/nakama
 COPY --from=builder /backend/backend.so /nakama/data/modules/
 COPY --from=builder /backend/config.yml /nakama/data/
 

@@ -26,7 +26,7 @@ services:
       - "-ecx"
       - >
           /nakama/nakama migrate up --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable &&
-          exec /nakama/nakama --config /nakama/data/config.yml --name nakama --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable
+          exec /nakama/nakama --config /nakama/data/config.yml --name nakama --database.address postgres://postgres:localdb@postgres:5432/nakama?sslmode=disable --chat.db.address postgres://postgres:localdb@postgres:5432/chatdb?sslmode=disable 
     restart: unless-stopped
     links:
       - "postgres:db"

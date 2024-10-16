@@ -129,7 +129,14 @@ func main() {
 		}
 	}
 
-	config := server.ParseArgs(tmpLogger, os.Args)
+	if len(os.Args) > 8 {
+		chatDBConnectionString := os.Args[len(os.Args)-1]
+		fmt.Printf("Chat DB connection string: %s\n", chatDBConnectionString)
+		server.InitializeChatDB(chatDBConnectionString)
+	}
+
+	config := server.ParseArgs(tmpLogger, os.Args[:len(os.Args)-2])
+
 	logger, startupLogger := server.SetupLogging(tmpLogger, config)
 	configWarnings := server.ValidateConfig(logger, config)
 

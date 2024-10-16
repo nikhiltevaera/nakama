@@ -23,13 +23,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/heroiclabs/nakama-common/runtime"
+	"log"
+	"sync"
 	"time"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/rtapi"
+	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/jackc/pgx/v5/pgtype"
+	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -48,6 +51,62 @@ const (
 type notificationCacheableCursor struct {
 	NotificationID []byte
 	CreateTime     int64
+}
+
+// ChatDB struct to hold the database connection and the mutex.
+type ChatDB struct {
+	db     *sql.DB
+	dbOnce sync.Once
+	mu     sync.Mutex
+}
+
+var chatDBInstance *ChatDB
+
+// InitializeDB initializes the database connection once.
+// This method is responsible for setting up the connection.
+func InitializeChatDB(connStr string) {
+	if chatDBInstance == nil {
+		chatDBInstance = &ChatDB{}
+	}
+
+	// Use the struct-scoped mutex to lock the initialization process.
+	chatDBInstance.mu.Lock()
+	defer chatDBInstance.mu.Unlock()
+
+	// Initialize the connection only once, even if called concurrently.
+	chatDBInstance.dbOnce.Do(func() {
+		db, err := sql.Open("postgres", connStr)
+		if err != nil {
+			log.Fatal("Error connecting to database:", err)
+		}
+		chatDBInstance.db = db
+		log.Println("Chat Database connection initialized.")
+	})
+}
+
+// GetDB returns the database connection if it has been initialized.
+// If the database is not initialized, it logs a fatal error.
+func GetChatDB() *sql.DB {
+	chatDBInstance.mu.Lock()
+	defer chatDBInstance.mu.Unlock()
+
+	if chatDBInstance == nil || chatDBInstance.db == nil {
+		log.Fatal("Chat Database not initialized. Call InitializeDB() first.")
+	}
+
+	return chatDBInstance.db
+}
+
+// CloseDB closes the database connection if it exists.
+func CloseChatDB() {
+	chatDBInstance.mu.Lock()
+	defer chatDBInstance.mu.Unlock()
+
+	if chatDBInstance != nil && chatDBInstance.db != nil {
+		chatDBInstance.db.Close()
+		chatDBInstance.db = nil
+		log.Println("Chat Database connection closed.")
+	}
 }
 
 func NotificationSend(ctx context.Context, logger *zap.Logger, db *sql.DB, tracker Tracker, messageRouter MessageRouter, notifications map[uuid.UUID][]*api.Notification) error {

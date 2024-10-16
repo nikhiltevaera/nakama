@@ -192,6 +192,11 @@ github.com/klauspost/compress/internal/cpuinfo
 github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
+# github.com/lib/pq v1.10.9
+## explicit; go 1.13
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
 # github.com/mschoch/smat v0.2.0
 ## explicit; go 1.13
 github.com/mschoch/smat
@@ -357,8 +362,6 @@ golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6
-## explicit; go 1.22.0
 # golang.org/x/net v0.26.0
 ## explicit; go 1.18
 golang.org/x/net/bpf

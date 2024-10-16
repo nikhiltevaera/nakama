@@ -430,6 +430,21 @@ func ValidateConfigDatabase(logger *zap.Logger, c Config) {
 	}
 }
 
+func ValidateConfigChatDatabase(logger *zap.Logger, c Config) {
+	if len(c.GetDatabase().Addresses) < 1 {
+		logger.Fatal("At least one database address must be specified", zap.Strings("chat.database.address", c.GetDatabase().Addresses))
+	}
+	for _, address := range c.GetDatabase().Addresses {
+		rawURL := fmt.Sprintf("postgresql://%s", address)
+		if _, err := url.Parse(rawURL); err != nil {
+			logger.Fatal("Bad database connection URL", zap.String("chat.database.address", address), zap.Error(err))
+		}
+	}
+	if c.GetDatabase().DnsScanIntervalSec < 1 {
+		logger.Fatal("Database DNS scan interval seconds must be > 0", zap.Int("database.dns_scan_interval_sec", c.GetDatabase().DnsScanIntervalSec))
+	}
+}
+
 func convertRuntimeEnv(logger *zap.Logger, existingEnv map[string]string, mergeEnv []string) map[string]string {
 	envMap := make(map[string]string, len(existingEnv))
 	for k, v := range existingEnv {

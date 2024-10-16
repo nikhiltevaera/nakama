@@ -24,14 +24,15 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"github.com/heroiclabs/nakama/v3/internal/satori"
-	"google.golang.org/grpc/grpclog"
 	"math"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/heroiclabs/nakama/v3/internal/satori"
+	"google.golang.org/grpc/grpclog"
 
 	"github.com/gofrs/uuid/v5"
 	jwt "github.com/golang-jwt/jwt/v4"

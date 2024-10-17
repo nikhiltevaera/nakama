@@ -919,6 +919,7 @@ type MatchData interface {
 type MatchDispatcher interface {
 	BroadcastMessage(opCode int64, data []byte, presences []Presence, sender Presence, reliable bool) error
 	BroadcastMessageDeferred(opCode int64, data []byte, presences []Presence, sender Presence, reliable bool) error
+	BroadcastMessageWebrtc(opCode int64, data []byte, presences []Presence, sender Presence, reliable bool) error
 	MatchKick(presences []Presence) error
 	MatchLabelUpdate(label string) error
 }

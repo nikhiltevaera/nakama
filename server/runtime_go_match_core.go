@@ -240,6 +240,23 @@ func (r *RuntimeGoMatchCore) BroadcastMessage(opCode int64, data []byte, presenc
 	return nil
 }
 
+func (r *RuntimeGoMatchCore) BroadcastMessageWebrtc(opCode int64, data []byte, presences []runtime.Presence, sender runtime.Presence, reliable bool) error {
+	if r.stopped.Load() {
+		return ErrMatchStopped
+	}
+
+	presenceIDs, msg, err := r.validateBroadcast(opCode, data, presences, sender, reliable)
+	if err != nil {
+		return err
+	}
+	if len(presenceIDs) == 0 {
+		return nil
+	}
+
+	r.router.SendToPresenceIDs(r.logger, presenceIDs, msg, reliable)
+	return nil
+}
+
 func (r *RuntimeGoMatchCore) BroadcastMessageDeferred(opCode int64, data []byte, presences []runtime.Presence, sender runtime.Presence, reliable bool) error {
 	if r.stopped.Load() {
 		return ErrMatchStopped

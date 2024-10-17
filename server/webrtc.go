@@ -25,10 +25,11 @@ type PayloadWebRTC struct {
 
 // WebRTCServer manages WebRTC connections and data channels.
 type WebRTCServer struct {
-	Conn   *webrtc.PeerConnection
-	Log    *zap.Logger
-	DataCh *webrtc.DataChannel
-	mu     sync.Mutex
+	Conn     *webrtc.PeerConnection
+	Log      *zap.Logger
+	DataChs  map[string]*webrtc.DataChannel
+	mu       sync.Mutex
+	Handlers map[string]func([]byte)
 }
 
 // WebRTCManager manages multiple WebRTC connections.
@@ -58,8 +59,10 @@ func WebRTCServerConfigure(logger *zap.Logger) (*WebRTCServer, error) {
 	}
 
 	server := &WebRTCServer{
-		Conn: pc,
-		Log:  logger,
+		Conn:     pc,
+		Log:      logger,
+		DataChs:  make(map[string]*webrtc.DataChannel),
+		Handlers: make(map[string]func([]byte)),
 	}
 
 	pc.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
@@ -70,47 +73,55 @@ func WebRTCServerConfigure(logger *zap.Logger) (*WebRTCServer, error) {
 		logger.Info("Data channel received: %s", zap.String("channel", dc.Label()))
 		server.mu.Lock()
 		defer server.mu.Unlock()
-		server.DataCh = dc
-		server.handleDataChannel(server.DataCh)
+		server.DataChs[dc.Label()] = dc
+		server.handleDataChannel(dc)
 	})
 
 	return server, nil
 }
 
-// ProcessPacket handles incoming data from the WebRTC data channel.
-func (server *WebRTCServer) ProcessPacket(data []byte) {
-	var request PayloadWebRTC
-	if err := json.Unmarshal(data, &request); err != nil {
-		server.Log.Error("Failed to unmarshal data: %v", zap.String("err", err.Error()))
-		return
-	}
-
-	server.SendResponse("Process Packet")
-}
-
 // SendResponse sends a response over the WebRTC data channel.
-func (server *WebRTCServer) SendResponse(response string) {
+func (server *WebRTCServer) SendResponse(channelLabel string, response string) {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
-	if server.DataCh == nil {
-		server.Log.Error("Data channel is not initialized")
+	// Check if the data channel with the given label exists
+	dataCh, exists := server.DataChs[channelLabel]
+	if !exists {
+		server.Log.Error("Data channel not found", zap.String("label", channelLabel))
 		return
 	}
 
-	err := server.DataCh.Send([]byte(response))
-	if err != nil {
-		server.Log.Error("Error occurred during sending data: %v", zap.String("err", err.Error()))
+	// Check if the data channel is open before sending the response
+	if dataCh.ReadyState() != webrtc.DataChannelStateOpen {
+		server.Log.Error("Data channel is not open", zap.String("label", channelLabel))
 		return
 	}
-	server.Log.Info("Sent response: %s", zap.String("response", response))
+
+	// Send the response over the selected data channel
+	err := dataCh.SendText(response)
+	if err != nil {
+		server.Log.Error("Error occurred during sending data", zap.String("label", channelLabel), zap.String("err", err.Error()))
+		return
+	}
+
+	server.Log.Info("Sent response", zap.String("label", channelLabel), zap.String("response", response))
 }
 
-// SendErrorResponse sends an error response to the client.
-func (server *WebRTCServer) SendErrorResponse(errorMsg string) {
+// SendErrorResponse sends an error response to the client on the specified data channel.
+func (server *WebRTCServer) SendErrorResponse(channelLabel string, errorMsg string) {
+	// Create the error response as a JSON object
 	errorResponse := map[string]string{"error": errorMsg}
-	responseBytes, _ := json.Marshal(errorResponse)
-	server.SendResponse(string(responseBytes))
+
+	// Marshal the error response into a JSON byte array
+	responseBytes, err := json.Marshal(errorResponse)
+	if err != nil {
+		server.Log.Error("Failed to marshal error response", zap.String("err", err.Error()))
+		return
+	}
+
+	// Send the error response on the specified data channel
+	server.SendResponse(channelLabel, string(responseBytes))
 }
 
 // handleWebSocket handles WebSocket connections for individual clients.
@@ -225,6 +236,27 @@ func setupCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
+// setup data channel handlers
+func (server *WebRTCServer) setupDataChannelHandlers() {
+	// Handler for 'control' data channel
+	server.Handlers["control"] = func(data []byte) {
+		// Logic for control messages
+		server.SendResponse("control", "Control message processed")
+	}
+
+	// Handler for 'game' data channel
+	server.Handlers["game"] = func(data []byte) {
+		// Logic for game messages
+		server.SendResponse("game", "Game message processed")
+	}
+
+	// Handler for 'chat' data channel
+	server.Handlers["chat"] = func(data []byte) {
+		// Logic for chat messages
+		server.SendResponse("chat", "Chat message processed")
+	}
+}
+
 // handleDataChannel handles the data channel events.
 func (server *WebRTCServer) handleDataChannel(dc *webrtc.DataChannel) {
 	server.Log.Info("New data channel created: %s", zap.String("label", dc.Label()))
@@ -235,7 +267,18 @@ func (server *WebRTCServer) handleDataChannel(dc *webrtc.DataChannel) {
 
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 		server.Log.Info("Received message: %s", zap.String("data", string(msg.Data)))
-		server.ProcessPacket(msg.Data)
+		// Get the handler based on the data channel label
+		server.mu.Lock()
+		handler, exists := server.Handlers[dc.Label()]
+		server.mu.Unlock()
+
+		// If handler exists, process the message
+		if exists {
+			handler(msg.Data)
+		} else {
+			server.Log.Warn("No handler for data channel", zap.String("label", dc.Label()))
+			server.SendErrorResponse(dc.Label(), "No handler available")
+		}
 	})
 
 	dc.OnClose(func() {
@@ -257,8 +300,8 @@ func (server *WebRTCServer) Close() {
 	}
 
 	// Close the WebRTC data channel.
-	if server.DataCh != nil {
-		server.DataCh.Close()
+	for _, dc := range server.DataChs {
+		dc.Close()
 	}
 }
 
@@ -287,6 +330,8 @@ func StartWebRTCServer(ctx context.Context, logger *zap.Logger) *WebRTCServer {
 			logger.Error("Failed to start WebRTC server: %v", zap.String("err", err.Error()))
 			return
 		}
+		//setup data channel Handlers
+		server.setupDataChannelHandlers()
 
 		// Unique ID for each WebRTC connection, could be something meaningful like session ID.
 		clientID := r.RemoteAddr

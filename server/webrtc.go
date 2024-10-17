@@ -38,6 +38,8 @@ type WebRTCManager struct {
 	mu      sync.Mutex
 }
 
+var webRTCServerInstance *WebRTCServer
+
 // NewWebRTCManager creates a new WebRTC manager.
 func NewWebRTCManager() *WebRTCManager {
 	return &WebRTCManager{
@@ -247,7 +249,7 @@ func (server *WebRTCServer) setupDataChannelHandlers() {
 	// Handler for 'game' data channel
 	server.Handlers["game"] = func(data []byte) {
 		// Logic for game messages
-		server.SendResponse("game", "Game message processed")
+		server.SendResponse("game", "Health is great")
 	}
 
 	// Handler for 'chat' data channel
@@ -341,6 +343,7 @@ func StartWebRTCServer(ctx context.Context, logger *zap.Logger) *WebRTCServer {
 		manager.mu.Unlock()
 
 		handleWebSocket(conn, server, logger)
+		webRTCServerInstance = server
 
 		// Cleanup after the connection is closed
 		manager.mu.Lock()
@@ -359,4 +362,8 @@ func StartWebRTCServer(ctx context.Context, logger *zap.Logger) *WebRTCServer {
 
 	logger.Info("WebRTC server started in %s", zap.String("duration", time.Since(startTime).String()))
 	return server
+}
+
+func GetWebRTCServerInstance() *WebRTCServer {
+	return webRTCServerInstance
 }

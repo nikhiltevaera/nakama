@@ -17,8 +17,10 @@ package server
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/gofrs/uuid/v5"
@@ -56,6 +58,12 @@ type RuntimeGoMatchCore struct {
 	ctx           context.Context
 
 	ctxCancelFn context.CancelFunc
+}
+
+type MatchDataResponse struct {
+	Data      []byte             `json:"data"`
+	Presences []runtime.Presence `json:"presences"` // Assuming runtime.Presence is defined elsewhere
+	Sender    runtime.Presence   `json:"sender"`
 }
 
 func NewRuntimeGoMatchCore(logger *zap.Logger, module string, matchRegistry MatchRegistry, router MessageRouter, id uuid.UUID, node, version string, stopped *atomic.Bool, db *sql.DB, env map[string]string, nk runtime.NakamaModule, match runtime.Match) (RuntimeMatchCore, error) {
@@ -251,6 +259,28 @@ func (r *RuntimeGoMatchCore) BroadcastMessageWebrtc(opCode int64, data []byte, p
 	}
 	if len(presenceIDs) == 0 {
 		return nil
+	}
+
+	webrtcServer := GetWebRTCServerInstance()
+	if webrtcServer == nil {
+		return errors.New("WebRTC server is not initialized")
+	}
+
+	handler, exists := webrtcServer.Handlers["game"]
+	if exists {
+		response := MatchDataResponse{
+			Data:      data,
+			Presences: presences,
+			Sender:    sender,
+		}
+		jsonBytes, err := json.Marshal(response)
+		if err != nil {
+			log.Fatalf("Error marshaling to JSON: %v", err)
+		}
+		handler(jsonBytes)
+	} else {
+		webrtcServer.Log.Warn("No handler for data channel", zap.String("label", "game"))
+		webrtcServer.SendErrorResponse("game", "No handler available")
 	}
 
 	r.router.SendToPresenceIDs(r.logger, presenceIDs, msg, reliable)

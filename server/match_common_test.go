@@ -130,7 +130,7 @@ func (m *testMatch) MatchLoop(ctx context.Context, logger runtime.Logger, db *sq
 	for _, message := range messages {
 		logger.Info("Received %v from %v", string(message.GetData()), message.GetUserId())
 		reliable := true
-		if err := dispatcher.BroadcastMessage(1, message.GetData(), []runtime.Presence{message}, nil, reliable); err != nil {
+		if err := dispatcher.BroadcastMessageWebrtc(1, message.GetData(), []runtime.Presence{message}, nil, reliable); err != nil {
 			logger.Error("Failed to broadcast message: %w", err)
 		}
 	}

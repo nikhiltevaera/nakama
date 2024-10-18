@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid/v5"
-	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/nikhiltevaera/nakama-common/runtime"
 	"github.com/pion/webrtc/v3"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"

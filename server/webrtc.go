@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/nikhiltevaera/nakama-common/runtime"
 	"github.com/pion/webrtc/v3"
 	"go.uber.org/zap"
 )

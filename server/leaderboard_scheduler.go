@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/heroiclabs/nakama-common/api"
+	"github.com/nikhiltevaera/nakama-common/api"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"

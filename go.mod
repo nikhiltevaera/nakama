@@ -14,10 +14,10 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
-	github.com/heroiclabs/nakama-common v1.33.1-0.20240920140332-3cdf52bdf781
 	github.com/heroiclabs/sql-migrate v0.0.0-20240528102547-233afc8cf05a
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/nikhiltevaera/nakama-common v0.0.3
 	github.com/pion/webrtc/v3 v3.3.4
 	github.com/stretchr/testify v1.9.0
 	github.com/uber-go/tally/v4 v4.1.16

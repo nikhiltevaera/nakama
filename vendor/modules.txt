@@ -147,11 +147,6 @@ github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/internal/genopena
 github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options
 github.com/grpc-ecosystem/grpc-gateway/v2/runtime
 github.com/grpc-ecosystem/grpc-gateway/v2/utilities
-# github.com/heroiclabs/nakama-common v1.33.1-0.20240920140332-3cdf52bdf781
-## explicit; go 1.19
-github.com/heroiclabs/nakama-common/api
-github.com/heroiclabs/nakama-common/rtapi
-github.com/heroiclabs/nakama-common/runtime
 # github.com/heroiclabs/sql-migrate v0.0.0-20240528102547-233afc8cf05a
 ## explicit; go 1.21
 github.com/heroiclabs/sql-migrate
@@ -200,6 +195,11 @@ github.com/lib/pq/scram
 # github.com/mschoch/smat v0.2.0
 ## explicit; go 1.13
 github.com/mschoch/smat
+# github.com/nikhiltevaera/nakama-common v0.0.3
+## explicit; go 1.19
+github.com/nikhiltevaera/nakama-common/api
+github.com/nikhiltevaera/nakama-common/rtapi
+github.com/nikhiltevaera/nakama-common/runtime
 # github.com/pion/datachannel v1.5.8
 ## explicit; go 1.19
 github.com/pion/datachannel

@@ -24,7 +24,7 @@
 package rtapi
 
 import (
-	api "github.com/heroiclabs/nakama-common/api"
+	api "github.com/nikhiltevaera/nakama-common/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"

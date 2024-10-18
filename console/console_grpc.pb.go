@@ -25,7 +25,7 @@ package console
 
 import (
 	context "context"
-	api "github.com/heroiclabs/nakama-common/api"
+	api "github.com/nikhiltevaera/nakama-common/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

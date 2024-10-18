@@ -26,9 +26,9 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid/v5"
-	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nikhiltevaera/nakama-common/runtime"
 	"go.uber.org/zap"
 )
 

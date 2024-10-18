@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/blugelabs/bluge"
 	"github.com/gofrs/uuid/v5"
-	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/nikhiltevaera/nakama-common/runtime"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"

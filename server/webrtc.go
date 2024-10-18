@@ -240,16 +240,26 @@ func setupCORS(w http.ResponseWriter) {
 
 // setup data channel handlers
 func (server *WebRTCServer) setupDataChannelHandlers() {
-	// Handler for 'control' data channel
-	server.Handlers["control"] = func(data []byte) {
-		// Logic for control messages
-		server.SendResponse("control", "Control message processed")
-	}
-
 	// Handler for 'game' data channel
 	server.Handlers["game"] = func(data []byte) {
-		// Logic for game messages
-		server.SendResponse("game", "Health is great")
+		// Create an instance of PayloadWebRTC to hold the unmarshalled data
+		var request PayloadWebRTC
+
+		// Unmarshal the incoming JSON message into the PayloadWebRTC struct
+		if err := json.Unmarshal(data, &request); err != nil {
+			server.Log.Error("Error unmarshalling WebSocket message", zap.String("err", err.Error()))
+			return // Exit the function if there is an error
+		}
+
+		// Logic for processing game messages
+		server.Log.Info("Received game action:", zap.String("rpc", request.RPC))
+
+		switch request.RPC {
+		case "healthcheck":
+			server.SendResponse("game", "Game started")
+		default:
+			server.Log.Warn("Unknown game RPC", zap.String("rpc", request.RPC))
+		}
 	}
 
 	// Handler for 'chat' data channel

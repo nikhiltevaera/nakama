@@ -74,12 +74,34 @@ func WebRTCServerConfigure(logger *zap.Logger) (*WebRTCServer, error) {
 	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
 		logger.Info("Data channel received: %s", zap.String("channel", dc.Label()))
 		server.mu.Lock()
+
 		defer server.mu.Unlock()
 		server.DataChs[dc.Label()] = dc
 		server.handleDataChannel(dc)
 	})
 
 	return server, nil
+}
+
+// Cleanup specific data channel if it's closed
+func (server *WebRTCServer) CleanupDataChannel(label string) {
+	server.Log.Info("Cleaning up data channel", zap.String("channel", label))
+	server.mu.Lock()
+	defer server.mu.Unlock()
+
+	dc, exists := server.DataChs[label]
+	if !exists {
+		server.Log.Warn("Attempted to clean up non-existent data channel", zap.String("channel", label))
+		return
+	}
+
+	// Close the data channel and remove it from the map
+	if err := dc.Close(); err != nil {
+		server.Log.Error("Error closing data channel", zap.String("err", err.Error()))
+	} else {
+		server.Log.Info("Data channel closed and cleaned up", zap.String("channel", label))
+	}
+	delete(server.DataChs, label) // Remove the closed data channel
 }
 
 // SendResponse sends a response over the WebRTC data channel.
@@ -271,14 +293,14 @@ func (server *WebRTCServer) setupDataChannelHandlers() {
 
 // handleDataChannel handles the data channel events.
 func (server *WebRTCServer) handleDataChannel(dc *webrtc.DataChannel) {
-	server.Log.Info("New data channel created: %s", zap.String("label", dc.Label()))
+	server.Log.Info("New data channel created", zap.String("channel", dc.Label()))
 
 	dc.OnOpen(func() {
-		server.Log.Info("Data channel '%s' is open.", zap.String("label", dc.Label()))
+		server.Log.Info("Data channel is open.", zap.String("channel", dc.Label()))
 	})
 
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-		server.Log.Info("Received message: %s", zap.String("data", string(msg.Data)))
+		server.Log.Info("Received message", zap.String("data", string(msg.Data)))
 		// Get the handler based on the data channel label
 		server.mu.Lock()
 		handler, exists := server.Handlers[dc.Label()]
@@ -288,13 +310,13 @@ func (server *WebRTCServer) handleDataChannel(dc *webrtc.DataChannel) {
 		if exists {
 			handler(msg.Data)
 		} else {
-			server.Log.Warn("No handler for data channel", zap.String("label", dc.Label()))
+			server.Log.Warn("No handler for data channel", zap.String("channel", dc.Label()))
 			server.SendErrorResponse(dc.Label(), "No handler available")
 		}
 	})
 
 	dc.OnClose(func() {
-		server.Log.Info("Data channel '%s' is closed.", zap.String("label", dc.Label()))
+		server.CleanupDataChannel(dc.Label())
 	})
 
 	dc.OnError(func(err error) {

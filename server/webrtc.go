@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -50,9 +51,10 @@ func NewWebRTCManager() *WebRTCManager {
 func WebRTCServerConfigure(logger *zap.Logger) (*WebRTCServer, error) {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
-			{URLs: []string{"stun:stun.l.google.com:19302"}},
+			{URLs: []string{"stun:stun.l.google.com:19302"}},             // Google STUN server
 		},
 	}
+	
 
 	pc, err := webrtc.NewPeerConnection(config)
 	if err != nil {
@@ -68,7 +70,7 @@ func WebRTCServerConfigure(logger *zap.Logger) (*WebRTCServer, error) {
 	}
 
 	pc.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
-		logger.Info("ICE Connection State has changed: %s", zap.String("state", string(state)))
+		logger.Info(fmt.Sprintf("ICE Connection State has changed: %s", state.String()))
 	})
 
 	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
@@ -176,6 +178,8 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 			continue
 		}
 
+		logger.Info(fmt.Sprintf("Data Type:%v, Data:%v",data["type"], data))
+
 		switch data["type"] {
 		case "offer":
 			offerData, ok := data["offer"].(map[string]interface{})
@@ -188,6 +192,7 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 			switch offerData["type"].(string) {
 			case "offer":
 				offer.Type = webrtc.SDPTypeOffer
+				logger.Info(fmt.Sprintf("Setting offer type: %v", webrtc.SDPTypeOffer))
 			case "answer":
 				offer.Type = webrtc.SDPTypeAnswer
 			case "pranswer":
@@ -202,17 +207,23 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 			if err := server.Conn.SetRemoteDescription(offer); err != nil {
 				logger.Error("Error setting remote description: %v", zap.String("err", err.Error()))
 				continue
+			}else{
+				logger.Info(fmt.Sprintf("Offer remote description set:%v",offer));
 			}
 
 			answer, err := server.Conn.CreateAnswer(nil)
 			if err != nil {
 				logger.Error("Error creating answer: %v", zap.String("err", err.Error()))
 				continue
+			}else{
+				logger.Info(fmt.Sprintf("Offer answer created:%v",answer));
 			}
 
 			if err := server.Conn.SetLocalDescription(answer); err != nil {
 				logger.Error("Error setting local description: %v", zap.String("err", err.Error()))
 				continue
+			}else{
+				logger.Info("Offer local description set!");
 			}
 
 			answerData, err := json.Marshal(map[string]interface{}{
@@ -227,6 +238,8 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 			if err := ws.Write(ctx, websocket.MessageBinary, answerData); err != nil {
 				logger.Error("Error writing answer data to WebSocket: %v", zap.String("err", err.Error()))
 				continue
+			}else{
+				logger.Info(fmt.Sprintf("Writing answer data to WebSocket"));
 			}
 
 		case "iceCandidate":
@@ -245,9 +258,13 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 				SDPMLineIndex: &sdpMLineIndex,
 			}
 
+			logger.Info(fmt.Sprintf("sdpMid:%v, sdpMLineIndex:%v, candidate:%v", sdpMid, sdpMLineIndex, candidate))
+
 			if err := server.Conn.AddICECandidate(candidate); err != nil {
 				logger.Error("Error adding ICE candidate: %v", zap.String("err", err.Error()))
 				continue
+			}else{
+				logger.Info(fmt.Sprintf("Added Ice candidate:%v",candidate))
 			}
 		}
 	}
@@ -255,9 +272,10 @@ func handleWebSocket(ws *websocket.Conn, server *WebRTCServer, logger *zap.Logge
 
 // setupCORS sets up Cross-Origin Resource Sharing headers.
 func setupCORS(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Headers", "Accept, X-Access-Token, X-Application-Name, X-Request-Sent-Time")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 // setup data channel handlers
